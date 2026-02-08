@@ -10,9 +10,9 @@ always@(posedge clk or negedge reset)
         q=0;
     else
     begin
-        q[0]=serial_in;
-        q[1]=q[0];
-        q[2]=q[1];
-        q[3]=q[2];
+        q[0]<=serial_in;
+        q[1]<=q[0];
+        q[2]<=q[1];
+        q[3]<=q[2];
     end
 endmodule

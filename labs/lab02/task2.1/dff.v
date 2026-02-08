@@ -1,6 +1,5 @@
-
 `timescale 1ns/1ps
-module dut (
+module dff (
   input wire clk,
   input wire d,
   input reset,

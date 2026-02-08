@@ -76,13 +76,15 @@ Become fluent with basic RISC-V assembly instructions and understand **register-
 - Performs:
   - addition  
      ```
-     <fill in your program here>
-
+    ADDI x5, x0, 10
+    ADDI x7, x0, 20
+    ADD x7, x7, x5
      ```
   - bitwise AND  
      ```
-     <your program here>
-
+    ADDI x5, x0, 7
+    ADDI x7, x0, 15
+    AND x7, x7, x5
      ```
 
 **Constraints**
@@ -94,9 +96,9 @@ Become fluent with basic RISC-V assembly instructions and understand **register-
 2. After execution, fill the following table:
 
 | Instruction | Destination Register | Value Written |
-|------------|----------------------|---------------|
-| add        |                      |               |
-| and        |                      |               |
+|------------|-----------------------|---------------|
+| add        |           x7          |     0x16      |
+| and        |           x7          |     0x7       |
 
 ---
 
@@ -108,8 +110,10 @@ Become fluent with basic RISC-V assembly instructions and understand **register-
 - Modifies it using **at least three immediate type arithmetic instructions**
 - Includes **at least one negative immediate**
    ```
-   <your program here>
-
+    LI x5, 1394
+    ORI x5, x5, 10
+    ADDI x5, x5, -210
+    ANDI x5, x5, 1096
    ```
 
 
@@ -118,12 +122,12 @@ Become fluent with basic RISC-V assembly instructions and understand **register-
 - Register value after each instruction
 - Explanation of how **sign extension** affects execution
 
-| Step | Instruction | Immediate (decimal) | Immediate (binary)         | Register Value After Execution |
-|------|------------|---------------------|-----------------------------|--------------------------------|
-| Init |            |                     |                             |                                |
-| 1    |            |                     |                             |                                |
-| 2    |            |                     |                             |                                |
-| 3    |            |                     |                             |                                |
+| Step | Instruction | Immediate (decimal) | Immediate (binary)         | Register Value After Execution (decimal) |
+|------|-------------|---------------------|----------------------------|------------------------------------------|
+| Init |    LI       |        1394         |       0000010101110010     |             1394                         |
+| 1    |    ORI      |         10          |       0000000000001010     |             1402                         |
+| 2    |    ADDI     |        -210         |       1111111100101110     |             1192                         |
+| 3    |    ANDI     |        1096         |       0000010001001000     |             1032                         |
 
 
 
@@ -152,19 +156,28 @@ Write a program that:
 
 ---
 ```
-<your program here>
+LI x6, 10
+LI x7, 0
 
+LOOP:
+    BEQ  x6, x0, DONE
+    ADDI x6, x6, -1
+    ADDI x7, x7, 1
+    JAL  x0, LOOP
+
+DONE:
 ```
 
 ### Report
 
 For **one conditional branch** and **one jump**, fill the table __*before stepping*__:
 
-| Instruction | PC (hex) | Immediate | Predicted Next PC | Actual Next PC |
-|------------|----------|-----------|-------------------|----------------|
-|   .|   |   |   |   |
-|   .|   |   |   |   |
-|   .|   |   |   |   |
+| Instruction | PC (hex) | Offset / Immediate    | Predicted Next PC | Actual Next PC |
+|-------------|----------|-----------|-------------------|----------------|
+|   BEQ       | 0x8      |    0x18   |   0xC             |   0xC          |
+|   ADDI      | 0xC      |     -1      |   0x10            |   0x10          |
+|   ADDI      | 0x10     |     1     |   0x14            |   0x14          |
+|   JAL       | 0x14     |     0x8      |   0x18            |   0x4          |
 
 ---
 
@@ -189,13 +202,13 @@ For **each instruction**, fill the table below:
 | Field |  Value | | | |
 |------|-------|------|-------|------|
 | Instruction | add | addi | beq | jal |
-| Instruction format (R/I/B/J) | | | | |
-| Opcode | | | | |
-| rs1 | | | | |
-| rs2 | | | | |
-| rd | | | | |
-| Immediate (binary, sign-extended) | | | | |
-| Final 32-bit encoding (hex) | | | | |
+| Instruction format (R/I/B/J) | R|I| B|J |
+| Opcode |0b0110011 | 0b0010011| 0b1100011| 0b1101111|
+| rs1 | 0b00101| 0b00110| 0b00101 | N/A|
+| rs2 | 0b00110| N/A| 0b00000| N/A|
+| rd | 0b00111| 0b00110| N/A| 0b00001|
+| Immediate (binary, sign-extended) | N/A | 0b111111111100 | 0b111111111100|0b11111111111111111010   |
+| Final 32-bit encoding (hex) | 0x006283b3|0xffc30313 | 0xfe028ce3| 0xff5ff0ef|
 
 Verify each encoding using the simulator assembler.
 
@@ -227,12 +240,12 @@ Fill the following table as if you were the processor, and you are working throu
 
 | PC | Instruction (hex) | Type | rs1 | rs2 | rd | Immediate | Meaning | Assembly |
 |----|------------------|------|-----|-----|----|-----------|---------|----------|
-|    |                  |      |     |     |    |           |         |          <br> |
-|    |                  |      |     |     |    |           |         |          <br> |
-|    |                  |      |     |     |    |           |         |          <br> |
-|    |                  |      |     |     |    |           |         |          <br> |
-|    |                  |      |     |     |    |           |         |          <br> |
-|    |                  |      |     |     |    |           |         |          <br> |
+| 0x0 | 0x00500293 | I | x0 | N/A | x5 | 5 | Load 5 into x5 | `addi x5, x0, 5` |
+| 0x4 | 0x00100313 | I | x0 | N/A | x6 | 1 | Load 1 into x6 | `addi x6, x0, 1` |
+| 0x8 | 0x00628463 | B | x5 | x6 | N/A | 8 | Branch to PC+8 if x5==x6 | `beq x5, x6, 8` |
+| 0xC | 0xFFF30313 | I | x6 | N/A | x6 | -1 | Decrement x6 by 1 | `addi x6, x6, -1` |
+| 0x10 | 0xFE000AE3 | B | x0 | x0 | N/A | -12 | Branch to PC-12 if x0==x0 | `beq x0, x0, -12` |
+| 0x14 | 0x0000006F | J | N/A | N/A | x0 | 0 | Jump to PC+0 (halt loop) | `jal x0, 0` |
 
 
 
@@ -258,12 +271,13 @@ Fill **predicted values**:
 
 | PC | x5 | x6 | x7 | Next PC |
 |----|----|----|----|---------|
-|    |    |    |    |     <br>|
-|    |    |    |    |     <br>|
-|    |    |    |    |     <br>|
-|    |    |    |    |     <br>|
-|    |    |    |    |     <br>|
-|    |    |    |    |     <br>|
+|  0 |  0  |  0  | 0   |  4   <br>|
+|  4 |  5  |  0  | 0   |  8   <br>|
+|  8  |  5  |  1  |   0 |  C   <br>|
+|  C  |  5  |  1  |   0 |  10   <br>|
+|  10  |  5  |  0  |   0 |  4   <br>|
+|  4  |  5  |  0  |   0 |  8   <br>|
+|  8  |  5  |  1  |   0 |  C   <br>|
 
 ---
 
@@ -291,7 +305,9 @@ For **each mismatch** between prediction and observation:
 - explain the architectural reason
 in the space below
 ```
-Your answer here.
+The assembly program given will never reach the final halt, as the loop given by BEQ x0, x0, -12 forces the program to repeat forever, changing x6 from 1 to 0 and back.
+
+There is no architectural reason for any mismatch, there is no mismatch. The flaw stems from the code itself.
 
 ```
 
@@ -327,24 +343,35 @@ The program contains **exactly three errors**:
 
 1. Decode the program into assembly
    ```
-   <your decoded assembly here>
-
+   ADDI x5, x0, 0      
+   ADDI x6, x0, 1      
+   ADDI x7, x0, 6      
+   BEQ  x7, x0, 20 
+   ADD  x8, x5, x6    
+   ADDI x7, x6, 0      
+   ADDI x7, x8, 0     
+   ADDI x7, x7, -2     
+   JAL  x0, 12         
+   JAL  x0, 0          
+   ADDI x7, x0, 0     
    ```
 2. Explain the **intended algorithm** (what does it do?)
    ```
-   Explain here
+   It looks like this algorithm is supposed to compute the fibonnaci number, up to the 6th fibonacci.
    ```
 3. Identify and explain **each error**
    ```
-   - Error 1: Explain here
-   - Error 2: Explain here
-   - Error 3: Explain here
+   - Error 1: The ADDI x7, x7, -2 should be -1 instead of -2 to correctly execute the program.
+   - Error 2: JAL x0, 12 should be JAL x0, -20 to jump back to the BEQ instruction to check for completion.
+   - Error 3: ADDI x7, x6 and ADDI x7, x8 are both incorrect. They should be doing x5 =  x6 and x6 = x8 in order to propelry work.
    ```
 4. Correct the machine code  
    Create a new file, `artefacts/lab03/assembly.asm` and add the final correct code there.
 5. Verify corrected behavior in the simulator
-6. Did you notice anything stragne? How does the CPU know when to stop executing instructions / when the program has ended?
-
+6. Did you notice anything strange? How does the CPU know when to stop executing instructions / when the program has ended?
+```
+The CPU knew when to stop executing when it entered the infinite loop of adding 0 to x7 repeatedly.
+```
 _Hint: you can examine the behavior of the machine code by copying it into the text memory in the simulator and stepping through. I am not sure if that will work, but you can try._
 
 ---

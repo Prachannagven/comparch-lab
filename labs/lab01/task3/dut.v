@@ -1,4 +1,4 @@
-module fa(
+module dut(
     input wire a,
     input wire b,
     input wire cin,
@@ -7,7 +7,8 @@ module fa(
 );
 
     always @(*) begin
-        {cout, sum} = a + b + cin;
+       sum = a ^ b ^ cin;
+       cout = (a & b) | (b & cin) | (a & cin); 
     end
 
 endmodule

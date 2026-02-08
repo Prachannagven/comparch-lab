@@ -1,4 +1,4 @@
-module dut(
+module fourbitadd(
     input [3:0]a,
     input [3:0]b,
     input cin,
