@@ -238,7 +238,11 @@ Module name: `aluaddsub`
 
 **For each of the above, report the delay in `ns` between application of input to stabilization of output** in the box below. Use the waveform viewer for this.
 ```
+positive + positive -> 3ns (for result)
+positive + negative -> 3ns (for result)
+subtraction resulting in negative values -> 3ns (for result)
 
+overflow takes 4ns due to the additional 1ns logical checking
 ```
 
 ---
@@ -260,7 +264,8 @@ Module name: `alulogic`
 
 **For each of the above, report the delay between application of input to stabilization of output** in the box below. Use the waveform viewer for this.
 ```
-
+And -> 2ns
+Or -> 2ns
 ```
 
 ---
@@ -283,7 +288,9 @@ Module name: `alushift`
 
 **For each of the above, report the delay between application of input to stabilization of output** in the box below. Use the waveform viewer for this.
 ```
-
+Shift by 0 -> 2ns
+Shift by 1 -> 2ns
+Shift by -1 -> 2ns
 ```
 
 ---
@@ -304,7 +311,7 @@ Signed comparison is not simply checking the sign bit when overflow occurs.
 
 **For each of the above, report the delay between application of input to stabilization of output** in the box below. Use the waveform viewer for this.
 ```
-
+5ns
 ```
 
 **Side Exercise:** <br>
@@ -360,17 +367,17 @@ Answer the following in the space provided below:
 
 1. Explain how signed overflow occurs in two’s complement addition.
    ```
-
+   Signed overflow happens when you add two numbers with the same sign and get a result with the opposite sign. Like adding two positives (MSB = 0) and getting negative (MSB = 1), or two negatives giving positive. The result wraps around because it can't fit in the available bits.
    ```
 
 2. Why does carry-out fail to indicate signed overflow?
    ```
-
+   Carry-out only tells you if there's a bit left over from addition, not if the sign changed incorrectly. For example, -1 + 1 = 0 produces carry-out but no overflow (different operand signs). Meanwhile, 0x7FFFFFFF + 1 causes overflow but no carry-out. Carry-out ignores sign interpretation completely.
    ```
 
 3. Why does RISC-V avoid exposing overflow flags in the ISA?
    ```
-
+   You can do overflow checking it in software by checking operand signs against result sign. Hardware overflow flags add complexity and the compiler/programmer has to manage them.
    ```
 
 Your explanation must refer to:
@@ -386,13 +393,17 @@ For each case below, fill the table and explain your reasoning.
 
 | A (hex) | B (hex) | Operation | Result (hex) | Signed Meaning | Unsigned Meaning |
 |--------|---------|-----------|--------------|----------------|------------------|
-| 0x80000000 | 0x00000001 | A + B | | | |
-| 0xFFFFFFFF | 0x00000001 | A + B | | | |
-| 0x00000001 | 0xFFFFFFFF | A < B | | | |
+| 0x80000000 | 0x00000001 | A + B | 0x80000001 | -2147483647 | 2147483649 |
+| 0xFFFFFFFF | 0x00000001 | A + B | 0x00000000 | -1 + 1 = 0 | 4294967295 + 1 = 0 (wrap) |
+| 0x00000001 | 0xFFFFFFFF | A < B | 0 (SLT) / 1 (SLTU) | 1 > -1, false | 1 < 4294967295, true |
 
 Explain:
 - what the ALU computes
 - how interpretation changes the meaning
+
+```
+The ALU just does binary arithmetic - it doesn't care about signed vs unsigned. The bits are the same. When adding 0x80000000 + 0x00000001, the hardware adds bits. Whether it means "most negative int + 1" or "2 billion + 1" depends on programmer interpretation. Same hardware, different meaning.
+```
 
 ---
 
@@ -400,17 +411,17 @@ Explain:
 
 1. Explain how `SLT` (signed) can be implemented using subtraction.
    ```
-
+   Compute A - B. If result is negative (MSB = 1), then A < B. But you have to handle overflow - if overflow occurred, the sign bit is wrong, so XOR the sign bit with the overflow flag to get the correct answer.
    ```
 
 2. Explain why `SLTU` (unsigned set less than) cannot rely on the sign bit.
    ```
-
+   For unsigned, there's no "sign bit" - it's just the MSB. 0xFFFFFFFF is the largest unsigned value, not -1. Checking the sign bit of (A - B) gives wrong answers since that bit has no meaning in unsigned context.
    ```
 
 3. Explain what role carry / borrow plays in unsigned comparison.
    ```
-
+   For unsigned subtraction, if A < B, then A - B needs to borrow. No borrow (carry-out = 1) means A >= B. Borrow (carry-out = 0) means A < B. So for SLTU, check the carry/borrow instead of sign bit.
    ```
 
 ---
@@ -431,13 +442,13 @@ SLTU: rd = (A < B) ? 1 : 0   // unsigned comparison
 **What to submit:**
 1. Block-level explanation of how SLTU is implemented
    ```
-
+   Reuse the same adder/subtractor to compute A - B. For unsigned comparison, instead of checking sign bit + overflow, check the borrow. If there's a borrow (A < B in unsigned), output 1. Borrow is detected from carry-out - when subtracting, carry-out = 0 means borrow occurred.
    ```
    
 2. Implementation file (under `lab04/task6`)
 3. Explanation of why SLT and SLTU differ despite identical hardware
    ```
-
+   Both use the same subtractor, but check different outputs. SLT checks sign bit XOR overflow because signed comparison cares about sign and overflow. SLTU checks carry/borrow because unsigned comparison just cares whether A's magnitude is less than B's.
    ```
 
 ---
@@ -448,7 +459,7 @@ In **5–7 lines**, answer:
 
 > What is the most important architectural insight you gained from implementing SLTU?
    ```
-
+   The biggest insight is that signed vs unsigned is purely about interpretation, not hardware. The adder doesn't care - it just adds bits. What matters is which output signals you check afterward. For signed, you need sign bit and overflow. For unsigned, you need carry/borrow. Same ALU, same operation, different meaning based on which wires you look at. That's why RISC-V has both SLT and SLTU without duplicating arithmetic hardware.
    ```
 
 ---
