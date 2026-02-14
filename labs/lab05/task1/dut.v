@@ -20,8 +20,6 @@ module dut (
         .rst(rst),
         .rdData1(rdData1),
         .rdData2(rdData2)
-    ); 
-    
-     
+    );   
     
 endmodule
