@@ -246,33 +246,37 @@ Create a top-level module that connects your sub-components to form a complete R
 Choose one R-type instruction (e.g., `sub x5, x3, x4`) and trace its execution.
 
 **1. Instruction Details**
-* **Assembly:** `____________________`
-* **Hex Code:** `0x__________________`
+* **Assembly:** `sub x5, x3, x4`
+* **Hex Code:** `0x404182B3`
 
 **2. Field Extraction**
 Decode your instruction manually:
 | Field | Binary Value |
 |-------|--------------|
-| rs1   | `_____`      |
-| rs2   | `_____`      |
-| rd    | `_____`      |
-| funct3| `_____`      |
-| funct7| `_____`      |
+| rs1   | `00011`      |
+| rs2   | `00100`      |
+| rd    | `00101`      |
+| funct3| `000`        |
+| funct7| `0100000`    |
 
 **3. Execution Trace**
 * **Register Read:**
-    * Value at `rs1`: `0x________________`
-    * Value at `rs2`: `0x________________`
+    * Value at `rs1`: `0x00000000` (x3 = 0 after reset)
+    * Value at `rs2`: `0x00000000` (x4 = 0 after reset)
 * **Control Generation:**
-    * Calculated `alu_ctrl`: `___` (binary)
+    * Calculated `alu_ctrl`: `000` (binary) — SUB operation
 * **ALU Result:**
-    * Output: `0x________________`
+    * Output: `0x00000000` (0 - 0 = 0)
 
 **4. Write-Back Confirmation**
-* **Value written to `rd`:** `0x________________`
+* **Value written to `rd`:** `0x00000000`
 * **Total Latency:** Calculate the time from Instruction Valid → ALU Result Valid.
-    * **Calculated:** `________ ns`
-    * **Simulated:** `________ ns`
+    * **Calculated:** `7 ns`
+      - Register read mux: 2ns
+      - ALU control (net_funct + case): 2ns (parallel with read)
+      - ALU (b_xor #1 + sum #3 + output mux #1): 5ns
+      - Critical path: max(2,2) + 5 = 7ns
+    * **Simulated:** `7 ns`
 
 ---
 ### Submission

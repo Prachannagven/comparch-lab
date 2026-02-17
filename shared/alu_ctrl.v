@@ -5,15 +5,15 @@
 module alu_ctrl (
     input wire  [2:0] funct3,
     input wire  [6:0] funct7,
-    output wire [2:0] alu_ctrl 
+    output reg  [2:0] alu_ctrl 
 );
     wire [3:0] net_funct;
-    #1 assign net_funct = {funct7[5], funct3};
+    assign #1 net_funct = {funct7[5], funct3};
 
     always @(*) begin
         case (net_funct)
-            4'b0000: begin//ADD
-                #1 alu_ctrl <= 3'b001;
+            4'b0000: begin //ADD
+                alu_ctrl = 3'b001;
             end
             4'b1000: begin //SUB
                 #1 alu_ctrl <= 3'b000;
@@ -30,7 +30,7 @@ module alu_ctrl (
             4'b0010: begin //SLT
                 #1 alu_ctrl <= 3'b110;
             end 
-            default: 
+            default: alu_ctrl = 3'b000;
         endcase
     end
     
