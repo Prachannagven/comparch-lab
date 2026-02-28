@@ -198,4 +198,4 @@ sub  x5, x4, x1    # x5 = 30 - 10 = 20
 
 ### Previous modules
 
-If you were unable to complete the previous labs, or do not have confidence in your own modules from previous labs, you can use copy the modules from [here](link).
+If you were unable to complete the previous labs, or do not have confidence in your own modules from previous labs, you can use copy the modules from [here](https://github.com/Rishith-V/CSF342-lab-solutions/).

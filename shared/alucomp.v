@@ -21,7 +21,7 @@ module alucomp (
     wire less_than;
     assign #1 less_than = diff[31] ^ (pos_overflow | neg_overflow);
 
-    // Output 32'b1 if a < b, else 32'b0
-    assign result = {31'b0, less_than};
+    // Output 32'hFFFFFFFF if a < b, else 32'b0
+    assign result = {32{less_than}};
 
 endmodule

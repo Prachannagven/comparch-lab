@@ -1,109 +1,65 @@
 `timescale 1ns/1ps
 module controlunit (
     input wire [31:0] instruction,
-    output reg RegWrite,
-    output reg ALUSrc,
-    output reg MemWrite,
-    output reg MemRead,
-    output reg [2:0] ALUOp,
-    output reg [1:0] ImmSel
+    output wire RegWrite,
+    output wire ALUSrc,
+    output wire MemWrite,
+    output wire MemRead,
+    output wire [2:0] ALUOp,
+    output wire [1:0] ImmSel
 );
 
-    wire [6:0] opcode = instruction[6:0];
-    wire [2:0] funct3 = instruction[14:12];
-    wire [6:0] funct7 = instruction[31:25];
+    wire [6:0] opcode;
+    wire [2:0] funct3;
+    wire [6:0] funct7;
 
-    always @(*) begin
-        RegWrite = 1'b0;
-        ALUSrc = 1'b0;
-        MemWrite = 1'b0;
-        MemRead = 1'b0;
-        ALUOp = 3'b000;
-        ImmSel = 2'b00;
+    assign opcode = instruction[6:0];
+    assign funct3 = instruction[14:12];
+    assign funct7 = instruction[31:25];
 
-        case (opcode)
-            7'b0110011: begin
-                RegWrite = 1'b1;
-                ALUSrc = 1'b0;
-                case ({funct7, funct3})
-                    10'b0000000_000: ALUOp = 3'b001;
-                    10'b0100000_000: ALUOp = 3'b000;
-                    10'b0000000_111: ALUOp = 3'b010;
-                    10'b0000000_110: ALUOp = 3'b011;
-                    10'b0000000_001: ALUOp = 3'b100;
-                    10'b0000000_101: ALUOp = 3'b101;
-                    10'b0000000_010: ALUOp = 3'b110;
-                    default: begin
-                        RegWrite = 1'b0;
-                        ALUOp = 3'b000;
-                    end
-                endcase
-            end
+    wire is_rtype;
+    wire is_ialu;
+    wire is_iload;
+    wire is_stype;
+    wire is_btype;
 
-            7'b0010011: begin
-                RegWrite = 1'b1;
-                ALUSrc = 1'b1;
-                ImmSel = 2'b00;
-                case (funct3)
-                    3'b000: ALUOp = 3'b001;
-                    3'b111: ALUOp = 3'b010;
-                    3'b110: ALUOp = 3'b011;
-                    3'b010: ALUOp = 3'b110;
-                    3'b001: begin
-                        if (funct7 == 7'b0000000) ALUOp = 3'b100;
-                        else RegWrite = 1'b0;
-                    end
-                    3'b101: begin
-                        if (funct7 == 7'b0000000) ALUOp = 3'b101;
-                        else RegWrite = 1'b0;
-                    end
-                    default: begin
-                        RegWrite = 1'b0;
-                        ALUOp = 3'b000;
-                    end
-                endcase
-            end
+    assign is_rtype = ~opcode[6] &  opcode[5] &  opcode[4] & ~opcode[3] & ~opcode[2] &  opcode[1] &  opcode[0];
+    assign is_ialu  = ~opcode[6] & ~opcode[5] &  opcode[4] & ~opcode[3] & ~opcode[2] &  opcode[1] &  opcode[0];
+    assign is_iload = ~opcode[6] & ~opcode[5] & ~opcode[4] & ~opcode[3] & ~opcode[2] &  opcode[1] &  opcode[0];
+    assign is_stype = ~opcode[6] &  opcode[5] & ~opcode[4] & ~opcode[3] & ~opcode[2] &  opcode[1] &  opcode[0];
+    assign is_btype =  opcode[6] &  opcode[5] & ~opcode[4] & ~opcode[3] & ~opcode[2] &  opcode[1] &  opcode[0];
 
-            7'b0000011: begin
-                if (funct3 == 3'b010) begin
-                    RegWrite = 1'b1;
-                    ALUSrc = 1'b1;
-                    MemRead = 1'b1;
-                    ALUOp = 3'b001;
-                    ImmSel = 2'b00;
-                end
-            end
+    wire f3_000;
+    wire f3_001;
+    wire f3_010;
+    wire f3_100;
+    wire f3_101;
+    wire f3_110;
+    wire f3_111;
 
-            7'b0100011: begin
-                if (funct3 == 3'b010) begin
-                    RegWrite = 1'b0;
-                    ALUSrc = 1'b1;
-                    MemWrite = 1'b1;
-                    ALUOp = 3'b001;
-                    ImmSel = 2'b01;
-                end
-            end
+    assign f3_000 = ~funct3[2] & ~funct3[1] & ~funct3[0];
+    assign f3_001 = ~funct3[2] & ~funct3[1] &  funct3[0];
+    assign f3_010 = ~funct3[2] &  funct3[1] & ~funct3[0];
+    assign f3_100 =  funct3[2] & ~funct3[1] & ~funct3[0];
+    assign f3_101 =  funct3[2] & ~funct3[1] &  funct3[0];
+    assign f3_110 =  funct3[2] &  funct3[1] & ~funct3[0];
+    assign f3_111 =  funct3[2] &  funct3[1] &  funct3[0];
 
-            7'b1100011: begin
-                RegWrite = 1'b0;
-                ALUSrc = 1'b0;
-                ImmSel = 2'b10;
-                case (funct3)
-                    3'b000, 3'b001: ALUOp = 3'b000;
-                    3'b100, 3'b101: ALUOp = 3'b110;
-                    default: ALUOp = 3'b000;
-                endcase
-            end
+    wire f7_alt;
+    assign f7_alt = ~funct7[6] &  funct7[5] & ~funct7[4] & ~funct7[3] & ~funct7[2] & ~funct7[1] & ~funct7[0];
 
-            default: begin
-                RegWrite = 1'b0;
-                ALUSrc = 1'b0;
-                MemWrite = 1'b0;
-                MemRead = 1'b0;
-                ALUOp = 3'b000;
-                ImmSel = 2'b00;
-            end
-        endcase
-    end
+    wire is_alu_instr;
+    assign is_alu_instr = is_rtype | is_ialu;
+
+    assign RegWrite  = is_rtype | is_ialu | is_iload;
+    assign ALUSrc    = is_ialu  | is_iload | is_stype;
+    assign MemWrite  = is_stype;
+    assign MemRead   = is_iload;
+    assign ImmSel[0] = is_stype;
+    assign ImmSel[1] = is_btype;
+
+    assign ALUOp[2] = is_alu_instr & (f3_001 | f3_010 | f3_100 | f3_101);
+    assign ALUOp[1] = is_alu_instr & (f3_010 | f3_101 | f3_110 | f3_111);
+    assign ALUOp[0] = ( is_alu_instr & ( (f3_000 & is_rtype & f7_alt) | f3_001 | f3_010 | f3_110 ) ) | is_btype;
 
 endmodule
